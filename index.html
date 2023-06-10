@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Мій бекенд</title>
+</head>
+<body>
+  <h1>Список об'єктів</h1>
+
+  <table id="objectsTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Назва</th>
+        <th>Опис</th>
+        <th>Дії</th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+
+  <h2>Додати новий об'єкт</h2>
+
+  <form id="addObjectForm">
+    <label for="name">Назва:</label>
+    <input type="text" id="name" name="name" required>
+    <br>
+    <label for="description">Опис:</label>
+    <input type="text" id="description" name="description" required>
+    <br>
+    <input type="submit" value="Додати">
+  </form>
+
+  <script>
+    // Функція для отримання масиву об'єктів з бекенду та відображення їх у таблиці
+    function getObjects() {
+      fetch('/api/objects')
+        .then(response => response.json())
+        .then(data => {
+          const objectsTable = document.getElementById('objectsTable');
+          const tbody = objectsTable.querySelector('tbody');
+
+          // Очищаємо таблицю перед заповненням
+          tbody.innerHTML = '';
+
+          // Додаємо кожен об'єкт до таблиці
+          data.forEach(object => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${object.id}</td>
+              <td>${object.name}</td>
+              <td>${object.description}</td>
+              <td>
+                <button onclick="editObject(${object.id})">Редагувати</button>
+                <button onclick="deleteObject(${object.id})">Видалити</button>
+              </td>
+            `;
+            tbody.appendChild(row);
+          });
+        });
+    }
+
+    // Функція для додавання нового об'єкта
+    function addObject(event) {
+      event.preventDefault();
+
+      const form = document.getElementById('addObjectForm');
+      const name = form.elements.name.value;
+      const description = form.elements.description.value;
+
+      const newObject = { name, description };
+
+      fetch('/api/objects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newObject)
+      })
+        .then(() => {
+          form.reset();
+          getObjects();
+        });
+    }
+
+    // Функція для редагування об'єкта
+    function editObject(objectId) {
+      const newName = prompt('Введіть нову назву:');
+      const newDescription = prompt('Введіть новий опис:');
+
+      const updatedObject = { name: newName, description: newDescription };
+
+      fetch(`/api/objects/${objectId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updatedObject)
+      })
+        .then(() => getObjects());
+    }
+
+    // Функція для видалення об'єкта
+    function deleteObject(objectId) {
+      if (confirm('Ви впевнені, що хочете видалити цей об\'єкт?')) {
+        fetch(`/api/objects/${objectId}`, {
+          method: 'DELETE'
+        })
+          .then(() => getObjects());
+      }
+    }
+
+    // Запускаємо отримання об'єктів при завантаженні сторінки
+    getObjects();
+
+    // Додаємо обробник події для додавання об'єкта
+    const addObjectForm = document.getElementById('addObjectForm');
+    addObjectForm.addEventListener('submit', addObject);
+  </script>
+</body>
+</html>
